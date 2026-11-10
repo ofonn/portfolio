@@ -1,0 +1,1009 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ofonime Usuyak | Engineering Command Deck &amp; Live Viewport Inspector</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <style>
+    :root {
+      --bg: #0E1217;
+      --bg-panel: #141A21;
+      --bg-elevated: #1B222C;
+      --ink: #ECF0F5;
+      --ink-secondary: #A5B1C2;
+      --ink-muted: #768396;
+      --accent: #14B884;
+      --accent-hover: #0FA072;
+      --accent-dim: rgba(20, 184, 132, 0.14);
+      --line: #252E3B;
+      --line-strong: #374457;
+      --radius: 8px;
+      --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    body {
+      font-family: "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    h1, h2, h3, .font-display {
+      font-family: "Outfit", sans-serif;
+      line-height: 1.1;
+      letter-spacing: -0.025em;
+      text-wrap: balance;
+    }
+
+    .mono {
+      font-family: "IBM Plex Mono", monospace;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button, a.cmd-btn {
+      font-family: inherit;
+      cursor: pointer;
+      transition: transform 160ms var(--ease-out), background-color 160ms var(--ease-out), border-color 160ms var(--ease-out), color 160ms var(--ease-out);
+    }
+
+    button:active, a.cmd-btn:active {
+      transform: scale(0.97);
+    }
+
+    button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .container {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* Top Nav <= 80px */
+    .top-bar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      height: 64px;
+      background: rgba(14, 18, 23, 0.94);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+    }
+
+    .top-inner {
+      width: 100%;
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .sys-id {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .sys-badge {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.78rem;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: var(--accent-dim);
+      color: var(--accent);
+      border: 1px solid rgba(20, 184, 132, 0.35);
+      white-space: nowrap;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      font-size: 0.86rem;
+      font-weight: 600;
+      color: var(--ink-secondary);
+      white-space: nowrap;
+    }
+
+    .nav-links a:hover {
+      color: var(--accent);
+    }
+
+    .cmd-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 40px;
+      padding: 0 14px;
+      border-radius: var(--radius);
+      border: 1px solid var(--line-strong);
+      background: var(--bg-panel);
+      color: var(--ink);
+      font-size: 0.84rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .cmd-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .cmd-btn.primary {
+      background: var(--accent);
+      color: #09130F;
+      border-color: var(--accent);
+      font-weight: 700;
+    }
+
+    .cmd-btn.primary:hover {
+      background: var(--accent-hover);
+      color: #09130F;
+    }
+
+    /* Hero + Interactive Workbench fits min-h-[100dvh] */
+    .command-hero {
+      min-height: calc(100dvh - 64px);
+      padding: 28px 0 40px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .hero-top {
+      display: grid;
+      grid-template-columns: 1.3fr 1fr;
+      gap: 32px;
+      align-items: end;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .hero-top h1 {
+      font-size: clamp(2rem, 3.4vw, 3.1rem);
+      margin-bottom: 10px;
+    }
+
+    .hero-top p {
+      color: var(--ink-secondary);
+      font-size: 0.98rem;
+      max-width: 64ch;
+    }
+
+    .telemetry-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--bg-panel);
+      overflow: hidden;
+    }
+
+    .stat-cell {
+      padding: 14px 16px;
+      border-right: 1px solid var(--line);
+    }
+
+    .stat-cell:last-child {
+      border-right: 0;
+    }
+
+    .stat-num {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 1.45rem;
+      font-weight: 600;
+      color: var(--accent);
+      display: block;
+    }
+
+    .stat-label {
+      font-size: 0.76rem;
+      color: var(--ink-muted);
+    }
+
+    /* Split-Pane Explorer & Live Viewport Dock */
+    .workbench {
+      display: grid;
+      grid-template-columns: minmax(300px, 380px) 1fr;
+      gap: 16px;
+      height: 620px;
+    }
+
+    .explorer-pane {
+      background: var(--bg-panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .pane-toolbar {
+      padding: 14px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: var(--bg-elevated);
+    }
+
+    .pane-toolbar label {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.74rem;
+      color: var(--ink-secondary);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .cmd-input {
+      width: 100%;
+      min-height: 40px;
+      padding: 0 12px;
+      border-radius: 6px;
+      border: 1px solid var(--line-strong);
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.84rem;
+    }
+
+    .mode-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .mode-pill {
+      padding: 5px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--line);
+      background: var(--bg);
+      color: var(--ink-secondary);
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.72rem;
+    }
+
+    .mode-pill[aria-pressed="true"] {
+      background: var(--accent);
+      color: #09130F;
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+
+    .tree-list {
+      flex: 1;
+      overflow-y: auto;
+      divide-y: 1px solid var(--line);
+    }
+
+    .tree-row {
+      width: 100%;
+      text-align: left;
+      padding: 11px 14px;
+      background: transparent;
+      border: 0;
+      border-bottom: 1px solid var(--line);
+      color: var(--ink);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .tree-row:hover {
+      background: var(--bg-elevated);
+    }
+
+    .tree-row[aria-selected="true"] {
+      background: var(--accent-dim);
+      color: var(--ink);
+    }
+
+    .tree-row[aria-selected="true"] .row-title {
+      color: var(--accent);
+    }
+
+    .row-title {
+      font-weight: 600;
+      font-size: 0.88rem;
+      display: block;
+    }
+
+    .row-sub {
+      font-size: 0.76rem;
+      color: var(--ink-muted);
+      display: block;
+      margin-top: 2px;
+    }
+
+    .row-badge {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.68rem;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      color: var(--ink-secondary);
+      white-space: nowrap;
+    }
+
+    /* Right Pane: Live Viewport & Architecture Dock */
+    .inspector-pane {
+      background: var(--bg-panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .inspector-bar {
+      min-height: 54px;
+      padding: 8px 16px;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .viewport-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .vp-btn {
+      min-height: 34px;
+      padding: 0 10px;
+      border-radius: 6px;
+      border: 1px solid var(--line-strong);
+      background: var(--bg);
+      color: var(--ink-secondary);
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.74rem;
+    }
+
+    .vp-btn[aria-pressed="true"] {
+      background: var(--ink);
+      color: var(--bg);
+      border-color: var(--ink);
+      font-weight: 600;
+    }
+
+    .inspector-stage {
+      flex: 1;
+      background: #090C10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: stretch;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .iframe-shell {
+      height: 100%;
+      width: 100%;
+      background: #FAF8F5;
+      border: 0;
+      transition: width 220ms var(--ease-out);
+    }
+
+    .spec-overlay {
+      width: 100%;
+      padding: 16px 20px;
+      background: var(--bg-panel);
+      border-top: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    /* Sections below Workbench */
+    .section {
+      padding: 72px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .section-head {
+      margin-bottom: 28px;
+      max-width: 760px;
+    }
+
+    .section-head h2 {
+      font-size: clamp(1.65rem, 2.6vw, 2.3rem);
+      margin-bottom: 8px;
+    }
+
+    .section-head p {
+      color: var(--ink-secondary);
+      font-size: 0.95rem;
+    }
+
+    /* Cockpit Data Matrix (1px lines, no card fluff) */
+    .cockpit-matrix {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--bg-panel);
+      overflow: hidden;
+    }
+
+    .matrix-row {
+      display: grid;
+      grid-template-columns: 240px 1fr 240px 190px;
+      gap: 16px;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--line);
+      align-items: center;
+    }
+
+    .matrix-row:last-child {
+      border-bottom: 0;
+    }
+
+    .matrix-row:hover {
+      background: var(--bg-elevated);
+    }
+
+    .matrix-head {
+      background: var(--bg-elevated);
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.74rem;
+      color: var(--ink-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Sector Accordion / Grid for All 91 Sites */
+    .sector-groups {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+
+    .sector-box {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--bg-panel);
+      overflow: hidden;
+    }
+
+    .sector-box-head {
+      padding: 14px 18px;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .sector-links {
+      max-height: 320px;
+      overflow-y: auto;
+    }
+
+    .sector-link-row {
+      padding: 10px 18px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.86rem;
+    }
+
+    .sector-link-row:last-child {
+      border-bottom: 0;
+    }
+
+    .sector-link-row:hover {
+      background: var(--bg-elevated);
+    }
+
+    .footer {
+      padding: 48px 0;
+      background: var(--bg-panel);
+    }
+
+    @media (max-width: 1080px) {
+      .nav-links {
+        display: none;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .hero-top,
+      .workbench,
+      .sector-groups {
+        grid-template-columns: 1fr;
+      }
+      .workbench {
+        height: auto;
+      }
+      .explorer-pane {
+        height: 420px;
+      }
+      .inspector-pane {
+        height: 580px;
+      }
+      .matrix-row {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+      .matrix-head {
+        display: none;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="top-bar">
+    <div class="top-inner">
+      <div class="sys-id">
+        <span class="sys-badge">OFONN // COMMAND DECK</span>
+        <span>Ofonime Usuyak</span>
+      </div>
+      <nav class="nav-links" aria-label="Primary sections">
+        <a href="#workbench-section">Live Workbench</a>
+        <a href="#vercel-matrix">Vercel Matrix (11)</a>
+        <a href="#paired-matrix">Dual-System Suites (16)</a>
+        <a href="#sector-directory">ofonn.github.io Directory (91)</a>
+      </nav>
+      <div style="display:flex;gap:8px;align-items:center">
+        <a href="index.html" class="cmd-btn">Switch Portfolio</a>
+        <a href="https://github.com/ofonn" target="_blank" rel="noopener" class="cmd-btn">
+          <i class="ph ph-github-logo"></i><span>ofonn</span>
+        </a>
+        <a href="mailto:ofonimeusuyak@gmail.com" class="cmd-btn primary">
+          <span>Contact Engineer</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Command Hero & Live Split-Pane Workbench -->
+    <section class="command-hero" id="workbench-section">
+      <div class="container">
+        <div class="hero-top">
+          <div>
+            <h1>Full-Stack Deployment Console &amp; Live Viewport Inspector</h1>
+            <p>
+              Select any of the 110 production apps, Evergreen financial audit engines, or commercial concepts below to inspect its live DOM in Desktop, Tablet, or Mobile viewports.
+            </p>
+          </div>
+          <div class="telemetry-strip" aria-label="Deployment counts">
+            <div class="stat-cell">
+              <span class="stat-num">110</span>
+              <span class="stat-label">Live Sites</span>
+            </div>
+            <div class="stat-cell">
+              <span class="stat-num">11</span>
+              <span class="stat-label">Vercel Apps</span>
+            </div>
+            <div class="stat-cell">
+              <span class="stat-num">91</span>
+              <span class="stat-label">GitHub Pages</span>
+            </div>
+            <div class="stat-cell">
+              <span class="stat-num">16</span>
+              <span class="stat-label">Paired Suites</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="workbench" style="margin-top:20px">
+          <!-- Left Pane: Filterable Directory -->
+          <aside class="explorer-pane" aria-label="Deployment directory">
+            <div class="pane-toolbar">
+              <label for="cmd-search">
+                <span>SEARCH DEPLOYMENTS</span>
+                <span id="tree-counter">110 items</span>
+              </label>
+              <input type="search" id="cmd-search" class="cmd-input" placeholder="Press / to filter by name, stack, sector...">
+              <div class="mode-pills" id="mode-pills">
+                <button type="button" class="mode-pill" data-filter="ALL" aria-pressed="true">All (110)</button>
+                <button type="button" class="mode-pill" data-filter="VERCEL" aria-pressed="false">Vercel (11)</button>
+                <button type="button" class="mode-pill" data-filter="BRAND" aria-pressed="false">Brand Concepts (39)</button>
+                <button type="button" class="mode-pill" data-filter="AUDIT" aria-pressed="false">Evergreen Audits (51)</button>
+                <button type="button" class="mode-pill" data-filter="GITHUB" aria-pressed="false">GitHub Repos (8)</button>
+              </div>
+            </div>
+            <div class="tree-list" role="listbox" aria-label="Site list" id="tree-list"></div>
+          </aside>
+
+          <!-- Right Pane: Live Viewport & Metadata Dock -->
+          <section class="inspector-pane" aria-label="Live site inspector">
+            <div class="inspector-bar">
+              <div style="min-width:0">
+                <strong id="insp-title" style="font-size:1rem;display:block">Evergreen Operations</strong>
+                <span class="mono" id="insp-url" style="font-size:0.75rem;color:var(--accent)">https://evergreen-ops.vercel.app</span>
+              </div>
+              <div class="viewport-controls">
+                <button type="button" class="vp-btn" data-width="100%" aria-pressed="true">Desktop (100%)</button>
+                <button type="button" class="vp-btn" data-width="768px" aria-pressed="false">Tablet (768px)</button>
+                <button type="button" class="vp-btn" data-width="390px" aria-pressed="false">Mobile (390px)</button>
+                <a id="insp-open" href="https://evergreen-ops.vercel.app" target="_blank" rel="noopener" class="cmd-btn primary" style="min-height:34px;padding:0 12px;font-size:0.76rem">
+                  <span>Open Tab</span><i class="ph ph-arrow-up-right"></i>
+                </a>
+              </div>
+            </div>
+
+            <div class="inspector-stage">
+              <iframe id="insp-iframe" class="iframe-shell" title="Selected deployment live viewport" src="https://ofonn.github.io/concepts/services/"></iframe>
+            </div>
+
+            <div class="spec-overlay">
+              <div>
+                <span class="mono" id="insp-cat" style="font-size:0.75rem;color:var(--accent)">Finance &amp; Enterprise Ops</span>
+                <p id="insp-desc" style="font-size:0.86rem;color:var(--ink-secondary);margin-top:2px"></p>
+              </div>
+              <div id="insp-tags" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: Full-Stack Vercel Production Matrix -->
+    <section class="section" id="vercel-matrix">
+      <div class="container">
+        <div class="section-head">
+          <h2>Production Vercel Systems &amp; Repositories</h2>
+          <p>
+            11 full-stack applications deployed on Vercel + 8 systems repositories on GitHub. Click "Load in Inspector" to test any application inside the viewport console above.
+          </p>
+        </div>
+
+        <div class="cockpit-matrix" id="vercel-matrix-rows"></div>
+      </div>
+    </section>
+
+    <!-- Section 3: 16 Paired Enterprise Suites Matrix -->
+    <section class="section" id="paired-matrix">
+      <div class="container">
+        <div class="section-head">
+          <h2>16 Dual-System Enterprise Pairs (Customer Site + Evergreen Audit)</h2>
+          <p>
+            Paired front-office commercial sites and back-office bank reconciliation dashboards engineered for Nigerian manufacturers, clinics, gyms, and hotels.
+          </p>
+        </div>
+
+        <div class="cockpit-matrix" id="paired-matrix-rows"></div>
+      </div>
+    </section>
+
+    <!-- Section 4: Sector-Grouped 91-Site Directory -->
+    <section class="section" id="sector-directory">
+      <div class="container">
+        <div class="section-head">
+          <h2>Complete 91-Site Directory by Industry Vertical</h2>
+          <p>
+            Every site hosted on <code class="mono">https://ofonn.github.io/concepts/&lt;slug&gt;/</code> grouped by Nigerian business sector.
+          </p>
+        </div>
+
+        <div class="sector-groups" id="sector-groups"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px">
+      <div>
+        <strong class="font-display" style="font-size:1.1rem">Ofonime Usuyak (ofonn)</strong>
+        <p class="mono" style="font-size:0.8rem;color:var(--ink-muted);margin-top:4px">
+          ofonimeusuyak@gmail.com | github.com/ofonn | ofonn.github.io
+        </p>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <a href="portfolio-1-studio.html" class="cmd-btn">Portfolio 1 (Studio Ledger)</a>
+        <a href="portfolio-3-kinetic.html" class="cmd-btn">Portfolio 3 (Kinetic Grid)</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="sites-data.js"></script>
+  <script>
+    (function () {
+      const data = window.OFONN_DATA;
+      if (!data) return;
+
+      // Flatten all 110 items into unified explorer list
+      const allItems = [];
+
+      data.vercelApps.forEach(function (v) {
+        allItems.push({
+          id: "v-" + v.id,
+          title: v.name,
+          subtitle: v.tagline,
+          desc: v.description,
+          url: v.url,
+          repo: v.repo,
+          category: v.category,
+          badge: "VERCEL",
+          group: "VERCEL",
+          tags: v.stack,
+          embeddable: true
+        });
+      });
+
+      data.concepts.forEach(function (c) {
+        const isAudit = c.kind.indexOf("Concept") === -1 && c.kind !== "Service Catalog";
+        allItems.push({
+          id: "c-" + c.slug,
+          title: c.brand,
+          subtitle: c.subtitle,
+          desc: c.headline + " (" + c.kind + " in " + c.category + ")",
+          url: c.url,
+          repo: "https://github.com/ofonn/concepts/tree/main/" + c.slug,
+          category: c.category,
+          badge: isAudit ? "AUDIT" : "CONCEPT",
+          group: isAudit ? "AUDIT" : "BRAND",
+          tags: [c.category, c.kind, "GitHub Pages"],
+          embeddable: true
+        });
+      });
+
+      data.githubSystems.forEach(function (g) {
+        allItems.push({
+          id: "g-" + g.id,
+          title: g.name,
+          subtitle: g.tagline,
+          desc: g.description,
+          url: g.url,
+          repo: g.repo,
+          category: g.category,
+          badge: g.platform === "GitHub Pages" ? "GH-PAGES" : "REPO",
+          group: "GITHUB",
+          tags: g.stack,
+          embeddable: g.platform === "GitHub Pages"
+        });
+      });
+
+      const treeList = document.getElementById("tree-list");
+      const treeCounter = document.getElementById("tree-counter");
+      const cmdSearch = document.getElementById("cmd-search");
+      const modePills = document.querySelectorAll(".mode-pill");
+
+      const inspTitle = document.getElementById("insp-title");
+      const inspUrl = document.getElementById("insp-url");
+      const inspOpen = document.getElementById("insp-open");
+      const inspIframe = document.getElementById("insp-iframe");
+      const inspCat = document.getElementById("insp-cat");
+      const inspDesc = document.getElementById("insp-desc");
+      const inspTags = document.getElementById("insp-tags");
+
+      let activeFilter = "ALL";
+      let selectedId = allItems[0].id;
+
+      window.inspectItemById = function (id, scrollUp) {
+        const item = allItems.find(function (x) { return x.id === id; });
+        if (!item) return;
+        selectedId = item.id;
+        inspTitle.textContent = item.title;
+        inspUrl.textContent = item.url;
+        inspOpen.href = item.url;
+        inspCat.textContent = item.category + " // " + item.badge;
+        inspDesc.textContent = item.desc;
+        inspTags.innerHTML = item.tags.map(function (t) {
+          return '<span class="row-badge">' + t + '</span>';
+        }).join("");
+
+        if (item.embeddable) {
+          inspIframe.src = item.url;
+        } else {
+          inspIframe.srcdoc =
+            '<!doctype html><html><body style="background:#0E1217;color:#ECF0F5;font-family:sans-serif;display:grid;place-items:center;height:90vh;margin:0;text-align:center;padding:24px">' +
+            '<div><h2 style="margin-bottom:8px">' + item.title + '</h2>' +
+            '<p style="color:#A5B1C2;max-width:460px;margin:0 auto 20px">' + item.desc + '</p>' +
+            '<a href="' + item.url + '" target="_blank" rel="noopener" style="display:inline-block;padding:12px 20px;background:#14B884;color:#09130F;font-weight:700;border-radius:8px;text-decoration:none">Open GitHub Repository</a></div></body></html>';
+        }
+
+        Array.from(treeList.children).forEach(function (btn) {
+          btn.setAttribute("aria-selected", btn.getAttribute("data-id") === selectedId ? "true" : "false");
+        });
+
+        if (scrollUp) {
+          document.getElementById("workbench-section").scrollIntoView({ behavior: "smooth" });
+        }
+      };
+
+      function renderTree() {
+        const q = (cmdSearch.value || "").trim().toLowerCase();
+        const filtered = allItems.filter(function (item) {
+          if (activeFilter !== "ALL" && item.group !== activeFilter) return false;
+          if (q) {
+            const hay = (item.title + " " + item.subtitle + " " + item.desc + " " + item.category + " " + item.tags.join(" ")).toLowerCase();
+            if (hay.indexOf(q) === -1) return false;
+          }
+          return true;
+        });
+
+        treeCounter.textContent = filtered.length + " items";
+        treeList.innerHTML = filtered.map(function (item) {
+          return (
+            '<button type="button" class="tree-row" role="option" data-id="' + item.id + '" aria-selected="' + (item.id === selectedId ? "true" : "false") + '" onclick="inspectItemById(\'' + item.id + '\', false)">' +
+              '<div style="min-width:0">' +
+                '<span class="row-title">' + item.title + '</span>' +
+                '<span class="row-sub">' + item.subtitle + '</span>' +
+              '</div>' +
+              '<span class="row-badge">' + item.badge + '</span>' +
+            '</button>'
+          );
+        }).join("");
+      }
+
+      modePills.forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          activeFilter = btn.getAttribute("data-filter");
+          modePills.forEach(function (b) {
+            b.setAttribute("aria-pressed", b === btn ? "true" : "false");
+          });
+          renderTree();
+        });
+      });
+
+      cmdSearch.addEventListener("input", renderTree);
+
+      // Keyboard shortcut: "/" focuses search
+      window.addEventListener("keydown", function (e) {
+        if (e.key === "/" && document.activeElement !== cmdSearch) {
+          e.preventDefault();
+          cmdSearch.focus();
+        }
+      });
+
+      // Viewport width switcher
+      const vpBtns = document.querySelectorAll(".vp-btn");
+      vpBtns.forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          const w = btn.getAttribute("data-width");
+          inspIframe.style.width = w;
+          vpBtns.forEach(function (b) {
+            b.setAttribute("aria-pressed", b === btn ? "true" : "false");
+          });
+        });
+      });
+
+      renderTree();
+      window.inspectItemById(allItems[0].id, false);
+
+      // Render Vercel + GitHub Matrix
+      const vercelMatrixRows = document.getElementById("vercel-matrix-rows");
+      const prodItems = allItems.filter(function (x) { return x.group === "VERCEL" || x.group === "GITHUB"; });
+      vercelMatrixRows.innerHTML =
+        '<div class="matrix-row matrix-head">' +
+          '<span>System / Product</span>' +
+          '<span>Architecture &amp; Scope</span>' +
+          '<span>Stack</span>' +
+          '<span>Actions</span>' +
+        '</div>' +
+        prodItems.map(function (item) {
+          return (
+            '<div class="matrix-row">' +
+              '<div>' +
+                '<strong style="display:block;font-size:0.98rem">' + item.title + '</strong>' +
+                '<span class="mono" style="font-size:0.74rem;color:var(--accent)">' + item.badge + '</span>' +
+              '</div>' +
+              '<div style="font-size:0.88rem;color:var(--ink-secondary)">' + item.desc + '</div>' +
+              '<div style="display:flex;gap:4px;flex-wrap:wrap">' +
+                item.tags.slice(0, 3).map(function (t) { return '<span class="row-badge">' + t + '</span>'; }).join("") +
+              '</div>' +
+              '<div style="display:flex;gap:8px;justify-content:flex-end">' +
+                '<button type="button" class="cmd-btn" style="min-height:34px;padding:0 10px;font-size:0.76rem" onclick="inspectItemById(\'' + item.id + '\', true)">Inspect</button>' +
+                '<a href="' + item.url + '" target="_blank" rel="noopener" class="cmd-btn primary" style="min-height:34px;padding:0 10px;font-size:0.76rem">Launch</a>' +
+              '</div>' +
+            '</div>'
+          );
+        }).join("");
+
+      // Render 16 Paired Enterprise Suites Matrix
+      const pairedMatrixRows = document.getElementById("paired-matrix-rows");
+      pairedMatrixRows.innerHTML =
+        '<div class="matrix-row matrix-head">' +
+          '<span>Enterprise</span>' +
+          '<span>Customer Brand Concept (Front-of-House)</span>' +
+          '<span>Evergreen Bank Audit (Back-of-House)</span>' +
+          '<span>Sector</span>' +
+        '</div>' +
+        data.pairedSuites.map(function (s) {
+          return (
+            '<div class="matrix-row">' +
+              '<div><strong style="font-size:0.96rem">' + s.enterprise + '</strong></div>' +
+              '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding-right:12px">' +
+                '<span style="font-size:0.86rem;color:var(--ink-secondary)">' + s.front.subtitle + '</span>' +
+                '<a href="' + s.front.url + '" target="_blank" rel="noopener" class="cmd-btn" style="min-height:32px;padding:0 10px;font-size:0.74rem">/' + s.front.slug + '</a>' +
+              '</div>' +
+              '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">' +
+                '<a href="' + s.back.url + '" target="_blank" rel="noopener" class="cmd-btn primary" style="min-height:32px;padding:0 10px;font-size:0.74rem">/' + s.back.slug + '</a>' +
+              '</div>' +
+              '<div class="mono" style="font-size:0.76rem;color:var(--ink-muted)">' + s.sector + '</div>' +
+            '</div>'
+          );
+        }).join("");
+
+      // Render Sector Directory for all 91 sites
+      const sectorGroupsEl = document.getElementById("sector-groups");
+      const bySector = {};
+      data.concepts.forEach(function (c) {
+        if (!bySector[c.category]) bySector[c.category] = [];
+        bySector[c.category].push(c);
+      });
+
+      sectorGroupsEl.innerHTML = Object.keys(bySector).map(function (sec) {
+        const list = bySector[sec];
+        return (
+          '<div class="sector-box">' +
+            '<div class="sector-box-head">' +
+              '<strong class="font-display">' + sec + '</strong>' +
+              '<span class="sys-badge">' + list.length + ' sites</span>' +
+            '</div>' +
+            '<div class="sector-links">' +
+              list.map(function (c) {
+                return (
+                  '<div class="sector-link-row">' +
+                    '<div>' +
+                      '<strong style="display:block">' + c.brand + '</strong>' +
+                      '<span style="font-size:0.76rem;color:var(--ink-muted)">' + c.subtitle + '</span>' +
+                    '</div>' +
+                    '<div style="display:flex;gap:6px;flex-shrink:0">' +
+                      '<button type="button" class="cmd-btn" style="min-height:30px;padding:0 8px;font-size:0.72rem" onclick="inspectItemById(\'c-' + c.slug + '\', true)">Load</button>' +
+                      '<a href="' + c.url + '" target="_blank" rel="noopener" class="cmd-btn primary" style="min-height:30px;padding:0 8px;font-size:0.72rem">Open</a>' +
+                    '</div>' +
+                  '</div>'
+                );
+              }).join("") +
+            '</div>' +
+          '</div>'
+        );
+      }).join("");
+    })();
+  </script>
+</body>
+</html>

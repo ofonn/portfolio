@@ -1,6 +1,6 @@
 window.OFONN_DATA = {
   "owner": {
-    "name": "Ofonime Usuyak",
+    "name": "Ofonime Okon Usuyak",
     "handle": "ofonn",
     "email": "ofonimeusuyak@gmail.com",
     "github": "https://github.com/ofonn",
@@ -8,15 +8,23 @@ window.OFONN_DATA = {
     "conceptsRoot": "https://ofonn.github.io/concepts/",
     "servicesUrl": "https://ofonn.github.io/concepts/services/",
     "flagshipDemo": "https://evergreen-ops.vercel.app",
-    "role": "Full-Stack Product Engineer & Business Systems Builder",
-    "location": "Nigeria"
+    "role": "Computer Engineer, Full-Stack Developer & Founder",
+    "location": "Ifo, Ogun State, Nigeria",
+    "shortName": "Ofonime Usuyak",
+    "phone": "+234 812 826 7153",
+    "timezone": "WAT (UTC+1)",
+    "availability": "Available for software development, digital marketing, and technical support roles.",
+    "cvPdf": "Ofonime-Usuyak-CV.pdf"
   },
   "stats": {
     "totalLiveSites": 110,
     "vercelDeployments": 11,
     "githubPagesSites": 96,
     "pairedEnterpriseSuites": 16,
-    "customServicesOffered": 52
+    "customServicesOffered": 52,
+    "peakTeamSize": 20,
+    "hardwareCostSavingsPct": 74,
+    "monetizationYears": "2021–2026"
   },
   "vercelApps": [
     {
@@ -1621,6 +1629,222 @@ window.OFONN_DATA = {
       "category": "Manufacturing & FMCG",
       "kind": "Distributor & Depot Reconciliation",
       "platform": "GitHub Pages"
+    }
+  ],
+  "engineeringProjects": [
+    {
+      "id": "arduino-trainer",
+      "title": "Arduino-Based Embedded System Trainer Module",
+      "context": "Final Year Project, Dept. of Computer Engineering, University of Uyo",
+      "badge": "Embedded Hardware",
+      "summary": "Bench-ready multi-component motor control trainer built within a 4-member engineering team under Engr. Dr. Bliss Stephen.",
+      "highlights": [
+        "Designed block and schematic diagrams and translated circuit logic into a custom printed circuit board (PCB) layout.",
+        "Fabricated and soldered the PCB integrating an Arduino Nano (ATmega328P) with servo, DC, and stepper motors, LEDs, resistors, and a buzzer.",
+        "Programmed C/C++ motor control firmware via Arduino IDE for rotation, direction, and positioning across all three motor types.",
+        "Conducted and documented 10 hardware validation experiments and built a protective housing frame for repeated lab use."
+      ],
+      "metrics": [
+        {
+          "value": "₦311,800",
+          "label": "Total build cost, roughly 74% below comparable trainers in literature (~$1,769 / ₦1.2M)."
+        },
+        {
+          "value": "10",
+          "label": "Documented hardware validation experiments across servo, DC, and stepper motors."
+        }
+      ],
+      "stack": [
+        "C / C++",
+        "Arduino Nano (ATmega328P)",
+        "PCB Design & Soldering",
+        "Servo / DC / Stepper Motors"
+      ]
+    },
+    {
+      "id": "aktc-transport",
+      "title": "Vehicle Management & Transport Monitoring System",
+      "context": "Academic Project, built for Akwa Ibom Transportation Company (AKTC)",
+      "badge": "Database System",
+      "summary": "Relational fleet and transport monitoring application built to handle vehicle records, route tracking, and daily operational reporting.",
+      "highlights": [
+        "Structured relational database tables in Microsoft Access to track vehicle records, routes, and monitoring logs.",
+        "Built forms, queries, and operational reports to support day-to-day data entry, tracking, and management reporting."
+      ],
+      "metrics": [],
+      "stack": [
+        "Microsoft Access",
+        "Relational SQL",
+        "Forms & Reporting"
+      ]
+    }
+  ],
+  "experience": [
+    {
+      "period": "2026",
+      "role": "Software Developer & Community Mentor",
+      "org": "Africinnovate Technologies",
+      "category": "core",
+      "kind": "Engineering & Mentorship",
+      "bullets": [
+        "Automated and scaled independent web-based platforms, sustaining monetization through Linkvertise, Google AdSense, Taboola, and CPAGrip (2021 to 2026).",
+        "Delivered technical presentations to the community on how the internet and IoT work, and on cybersecurity.",
+        "Mentored community members informally in practical software development."
+      ]
+    },
+    {
+      "period": "Aug 2024 – Dec 2025",
+      "role": "Software Developer",
+      "org": "Manful Technologies, Uyo",
+      "category": "core",
+      "kind": "Full-Stack Engineering",
+      "bullets": [
+        "Delivered contract-based web development projects for clients from planning through deployment.",
+        "Built and monetized independent web-based platforms using Python, Cloudflare, and Supabase.",
+        "Applied full-stack development practices across multiple client and personal projects."
+      ]
+    },
+    {
+      "period": "2024",
+      "role": "Founder",
+      "org": "iLINK, Nigeria",
+      "category": "core",
+      "kind": "Founder & Leadership",
+      "bullets": [
+        "Founded and led a digital marketing company driving online traffic acquisition and content monetization.",
+        "Built and managed a team of up to 20 staff at peak, overseeing strategy, operations, and partnerships.",
+        "Directed partnerships with major advertising networks including Linkvertise, Google AdSense, and Taboola.",
+        "Concluded company operations in August 2024 after a period of rapid growth."
+      ]
+    },
+    {
+      "period": "2022",
+      "role": "SIWES Trainee",
+      "org": "Manful Technologies, Uyo",
+      "category": "internship",
+      "kind": "Internship",
+      "bullets": [
+        "Completed structured industrial training in Python programming, software and web development, computer maintenance, and cybersecurity."
+      ]
+    },
+    {
+      "period": "2017 – 2018",
+      "role": "Manager",
+      "org": "VICCO Computer Training Center, Oron",
+      "category": "core",
+      "kind": "Operations",
+      "bullets": [
+        "Oversaw daily operations of a computer training center, including staff coordination and customer service.",
+        "Managed financial record-keeping, accounts, and bookkeeping for the business.",
+        "Handled inventory, equipment maintenance, and client relations."
+      ]
+    },
+    {
+      "period": "2016 – 2017",
+      "role": "Intern",
+      "org": "VICCO Computer Training Center, Oron",
+      "category": "internship",
+      "kind": "Internship",
+      "bullets": [
+        "Assisted with day-to-day computer training center operations, customer support, and basic technical assistance.",
+        "Promoted to full-time staff in January 2017 following consistent performance."
+      ]
+    },
+    {
+      "period": "2015",
+      "role": "Design Intern",
+      "org": "Amazing Grace Computers, Ijaye, Lagos",
+      "category": "internship",
+      "kind": "Internship",
+      "bullets": [
+        "Gained early hands-on exposure to computer applications and design practice using CorelDRAW and Microsoft Word."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "B.Eng in Computer Engineering",
+      "institution": "University of Uyo, Uyo, Akwa Ibom State",
+      "period": "2018 – 2023",
+      "details": "Formal engineering training covering embedded systems, microcontrollers, PCB layout and fabrication, relational databases, and software engineering."
+    }
+  ],
+  "awards": [
+    {
+      "title": "1st Place, GDG (Google Developer Group) Hackathon",
+      "issuer": "GDG Eket",
+      "year": "2026"
+    },
+    {
+      "title": "Full-Stack Web Development, Web Application Development & E-commerce Website Development",
+      "issuer": "Manful ICT Hub",
+      "year": "2018"
+    }
+  ],
+  "skills": [
+    {
+      "group": "Programming Languages",
+      "items": [
+        "Python",
+        "JavaScript",
+        "TypeScript",
+        "PHP",
+        "C",
+        "C++"
+      ]
+    },
+    {
+      "group": "Web & Frontend",
+      "items": [
+        "Next.js",
+        "React",
+        "Astro",
+        "HTML / CSS",
+        "Tailwind CSS",
+        "Progressive Web Apps (PWA)"
+      ]
+    },
+    {
+      "group": "Backend & Databases",
+      "items": [
+        "REST APIs",
+        "SQL & NoSQL",
+        "Supabase",
+        "IndexedDB",
+        "Microsoft Access"
+      ]
+    },
+    {
+      "group": "DevOps & Infrastructure",
+      "items": [
+        "Docker",
+        "Kubernetes",
+        "Linux",
+        "CI/CD",
+        "Git & GitHub",
+        "Cloudflare",
+        "Vercel"
+      ]
+    },
+    {
+      "group": "Mobile & Design",
+      "items": [
+        "Android & iOS App Development",
+        "Flutter / Dart",
+        "UI/UX Design",
+        "CorelDRAW"
+      ]
+    },
+    {
+      "group": "Digital & Operations",
+      "items": [
+        "Digital Marketing",
+        "Ad Network Monetization",
+        "AI-Assisted Development",
+        "CCTV & Surveillance Systems",
+        "Team Leadership",
+        "Client Management"
+      ]
     }
   ]
 };

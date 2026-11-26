@@ -1,26 +1,33 @@
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowDown, ArrowUpRight, Check, Copy, Eye, Search } from "lucide-react";
-import { BESPOKE_CONCEPTS, OPEN_TOOLS, OWNER, PRODUCTS } from "./data/portfolio";
+import { ArrowDown, ArrowUpRight, Check, Compass, Copy } from "lucide-react";
+import {
+  BACKGROUND,
+  CREDENTIALS,
+  DISCIPLINES,
+  FEATURED_WORK,
+  OWNER,
+  RANKED_WORKS,
+} from "./data/portfolio";
 import { MenuBar } from "./components/MenuBar";
-import { QuickLookSheet, type PreviewTarget } from "./components/QuickLookSheet";
-import { Spotlight, type SpotlightEntry } from "./components/Spotlight";
+import { Spotlight } from "./components/Spotlight";
 
-const CONCEPT_GROUPS = [
+const SECTORS = [
   "All",
+  "Live Platforms",
   "Food & Agro",
   "Retail & Dining",
   "Healthcare",
   "Hospitality",
   "Education",
   "Fitness",
+  "Open Source",
 ] as const;
 
 export default function App() {
-  const [activeGroup, setActiveGroup] = useState<string>("All");
-  const [conceptQuery, setConceptQuery] = useState("");
-  const [quickLookId, setQuickLookId] = useState<string | null>(null);
-  const [spotlightOpen, setSpotlightOpen] = useState(false);
+  const [activeSector, setActiveSector] = useState<string>("All");
+  const [showAllArchive, setShowAllArchive] = useState(false);
+  const [navigatorOpen, setNavigatorOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
   const showToast = (message: string) => {
@@ -36,236 +43,163 @@ export default function App() {
     }
   };
 
-  const previewTargets = useMemo<PreviewTarget[]>(() => {
-    const productTargets: PreviewTarget[] = PRODUCTS.filter((p) => p.previewable).map((p) => ({
-      id: p.id,
-      title: p.name,
-      subtitle: p.concept,
-      url: p.url,
-      domain: p.domain,
-    }));
-    const conceptTargets: PreviewTarget[] = BESPOKE_CONCEPTS.map((c) => ({
-      id: `concept:${c.slug}`,
-      title: c.brand,
-      subtitle: `${c.purpose} · ${c.headline}`,
-      url: c.url,
-      domain: `ofonn.github.io/concepts/${c.slug}`,
-    }));
-    const toolTargets: PreviewTarget[] = OPEN_TOOLS.filter((t) => t.previewable).map((t) => ({
-      id: t.id,
-      title: t.name,
-      subtitle: t.concept,
-      url: t.url,
-      domain: t.url.replace(/^https?:\/\//, "").replace(/\/$/, ""),
-    }));
-    return [...productTargets, ...conceptTargets, ...toolTargets];
-  }, []);
-
-  const spotlightEntries = useMemo<SpotlightEntry[]>(() => {
-    const prod: SpotlightEntry[] = PRODUCTS.map((p) => ({
-      id: p.id,
-      title: p.name,
-      subtitle: p.concept,
-      section: "Product",
-      keywords: `${p.category} ${p.detail}`,
-      previewable: p.previewable,
-      onSelect: () => {
-        setSpotlightOpen(false);
-        setQuickLookId(p.id);
-      },
-    }));
-
-    const conc: SpotlightEntry[] = BESPOKE_CONCEPTS.map((c) => ({
-      id: `concept:${c.slug}`,
-      title: c.brand,
-      subtitle: `${c.purpose} — ${c.headline}`,
-      section: "Concept",
-      keywords: `${c.group} ${c.slug} ${c.purpose} ${c.headline}`,
-      previewable: true,
-      onSelect: () => {
-        setSpotlightOpen(false);
-        setQuickLookId(`concept:${c.slug}`);
-      },
-    }));
-
-    const tools: SpotlightEntry[] = OPEN_TOOLS.map((t) => ({
-      id: t.id,
-      title: t.name,
-      subtitle: t.concept,
-      section: "Open Source",
-      keywords: t.concept,
-      previewable: t.previewable,
-      onSelect: () => {
-        setSpotlightOpen(false);
-        if (t.previewable) setQuickLookId(t.id);
-        else window.open(t.url, "_blank", "noopener,noreferrer");
-      },
-    }));
-
-    return [
-      ...prod,
-      ...conc,
-      ...tools,
-      {
-        id: "action:copy-email",
-        title: "Copy email address",
-        subtitle: OWNER.email,
-        section: "Action",
-        keywords: "email contact mail",
-        previewable: false,
-        onSelect: () => {
-          setSpotlightOpen(false);
-          copyEmail();
-        },
-      },
-    ];
-  }, []);
-
-  const filteredConcepts = useMemo(() => {
-    const q = conceptQuery.trim().toLowerCase();
-    return BESPOKE_CONCEPTS.filter((c) => {
-      if (activeGroup !== "All" && c.group !== activeGroup) return false;
-      if (!q) return true;
-      return (
-        c.brand.toLowerCase().includes(q) ||
-        c.purpose.toLowerCase().includes(q) ||
-        c.headline.toLowerCase().includes(q) ||
-        c.group.toLowerCase().includes(q)
-      );
-    });
-  }, [activeGroup, conceptQuery]);
-
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
-        setSpotlightOpen((prev) => !prev);
+        setNavigatorOpen((prev) => !prev);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  const primaryFeatured = FEATURED_WORK.filter((w) => w.tier === "primary");
+  const secondaryFeatured = FEATURED_WORK.filter((w) => w.tier === "secondary");
+  const topNine = RANKED_WORKS.filter((w) => w.highlight);
+
+  const archiveWorks = useMemo(() => {
+    const pool = activeSector === "All"
+      ? RANKED_WORKS.filter((w) => !w.highlight)
+      : RANKED_WORKS.filter((w) => w.sector === activeSector);
+    return pool;
+  }, [activeSector]);
+
+  const visibleArchive = showAllArchive || activeSector !== "All"
+    ? archiveWorks
+    : archiveWorks.slice(0, 12);
+
   return (
     <div id="top" className="ambient-aura min-h-screen text-[#f5f5f7]">
-      <MenuBar onOpenSpotlight={() => setSpotlightOpen(true)} />
+      <MenuBar onOpenNavigator={() => setNavigatorOpen(true)} />
 
-      <main className="mx-auto max-w-[1160px] px-6">
-        {/* Open-Air Apple Keynote Hero — zero boxes */}
-        <section className="pt-32 pb-24 md:pt-44 md:pb-32">
+      <main className="mx-auto max-w-[1180px] px-6">
+        {/* Open-Air Hero */}
+        <section className="pt-32 pb-20 md:pt-44 md:pb-28">
           <motion.div
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
           >
             <p className="mb-6 text-[13px] font-medium tracking-wide text-[#8e8e93]">
-              {OWNER.name} · {OWNER.location}
+              {OWNER.name} · Computer Engineer &amp; Product Builder · {OWNER.location}
             </p>
-            <h1 className="apple-headline max-w-[14ch] text-[clamp(2.85rem,7vw,5.4rem)] leading-[1.01] font-semibold tracking-[-0.045em]">
-              Products and concepts built to be used.
+            <h1 className="apple-headline max-w-[15ch] text-[clamp(2.8rem,7vw,5.4rem)] leading-[1.01] font-semibold tracking-[-0.045em]">
+              Systems, products, and bespoke web concepts.
             </h1>
-            <p className="mt-7 max-w-[54ch] text-[17px] leading-[1.6] text-[#a1a1a6] md:text-[19px]">
-              Original web applications, one-off brand and service concepts, and open-source tools. Every entry below is live and built around a distinct purpose.
+            <p className="mt-7 max-w-[58ch] text-[17px] leading-[1.6] text-[#a1a1a6] md:text-[19px]">
+              From financial reconciliation software and cultural archives to automated cloud pipelines, data extraction, and over 40 tailored web experiences.
             </p>
 
             <div className="mt-10 flex flex-wrap items-center gap-7 text-[15px] font-medium">
               <a
-                href="#products"
-                className="inline-flex items-center gap-2 rounded-full bg-[#f5f5f7] px-6 py-3 text-[#000000] transition-transform hover:scale-[1.02] active:scale-[0.98]"
+                href="#featured"
+                className="inline-flex items-center gap-2 rounded-full bg-[#f5f5f7] px-6 py-3 text-black transition-transform hover:scale-[1.02] active:scale-[0.98]"
               >
-                Explore work
+                See featured work
                 <ArrowDown className="h-4 w-4" />
               </a>
 
               <button
                 type="button"
-                onClick={() => setQuickLookId("evergreen-ops")}
+                onClick={() => setNavigatorOpen(true)}
                 className="inline-flex items-center gap-2 text-[#f5f5f7] transition-opacity hover:opacity-75"
               >
-                <Eye className="h-4 w-4 text-[#0a84ff]" />
-                Quick Look flagship
+                <Compass className="h-4 w-4 text-[#0a84ff]" />
+                Quick Jump <span className="font-mono text-[12px] text-[#8e8e93]">⌘K</span>
               </button>
 
-              <button
-                type="button"
-                onClick={() => setSpotlightOpen(true)}
-                className="inline-flex items-center gap-2 text-[#8e8e93] transition-colors hover:text-white"
+              <a
+                href={OWNER.github}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-[#8e8e93] transition-colors hover:text-white"
               >
-                <Search className="h-4 w-4" />
-                Spotlight <span className="font-mono text-[12px]">⌘K</span>
-              </button>
+                GitHub
+                <ArrowUpRight className="h-4 w-4" />
+              </a>
             </div>
           </motion.div>
         </section>
 
-        {/* Section 1: Shipped Products — borderless hairline editorial rows */}
-        <section id="products" className="scroll-mt-16 py-20">
-          <div className="mb-12 flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <p className="mb-2 text-[12px] font-medium tracking-[0.12em] text-[#0a84ff] uppercase">
-                Shipped Products
-              </p>
-              <h2 className="text-[clamp(1.8rem,3.6vw,2.75rem)] leading-[1.08] font-semibold tracking-[-0.035em] text-white">
-                Seven live products.
-              </h2>
-            </div>
-            <p className="max-w-[38ch] text-[14px] text-[#8e8e93]">
-              Open any product directly or inspect it inside Desktop and iPhone viewports with Quick Look.
-            </p>
-          </div>
-
-          <div className="border-t border-white/[0.09]">
-            {PRODUCTS.map((product, index) => (
+        {/* Featured Editorial Spreads — Evergreen & origins prominent, Atmos lighter */}
+        <section id="featured" className="scroll-mt-16 py-12">
+          <div className="space-y-0 border-t border-white/[0.09]">
+            {primaryFeatured.map((work, i) => (
               <motion.article
-                key={product.id}
-                initial={{ opacity: 0, y: 12 }}
+                key={work.id}
+                initial={{ opacity: 0, y: 18 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-40px" }}
-                transition={{ duration: 0.45, delay: index * 0.03 }}
-                className="group grid grid-cols-1 gap-6 border-b border-white/[0.08] py-9 transition-colors hover:bg-white/[0.025] md:grid-cols-[56px_minmax(0,1fr)_auto] md:items-start md:px-4"
+                viewport={{ once: true, margin: "-60px" }}
+                transition={{ duration: 0.55 }}
+                style={{
+                  background: `radial-gradient(640px 260px at ${i % 2 === 0 ? "85%" : "15%"} 50%, ${work.accentGlow}, transparent 70%)`,
+                }}
+                className="grid grid-cols-1 gap-8 border-b border-white/[0.09] py-16 md:grid-cols-12 md:items-end md:py-24"
               >
-                <span className="tabular font-mono text-[12px] text-[#6e6e73] md:pt-2">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                    <h3 className="text-[22px] font-semibold tracking-[-0.025em] text-white transition-transform duration-300 group-hover:translate-x-1 md:text-[26px]">
-                      {product.name}
-                    </h3>
-                    <span className="text-[12px] text-[#8e8e93]">{product.category}</span>
-                    <span className="inline-flex items-center gap-1.5 text-[11.5px] font-medium text-[#a1a1a6]">
-                      <span
-                        className={`h-1.5 w-1.5 rounded-full ${
-                          product.status === "Live" ? "bg-[#30d158]" : "bg-[#ff9f0a]"
-                        }`}
-                      />
-                      {product.status}
-                    </span>
-                  </div>
-
-                  <p className="mt-2 text-[16px] font-medium text-[#e5e5ea]">{product.concept}</p>
-                  <p className="mt-2 max-w-[64ch] text-[14.5px] leading-[1.6] text-[#8e8e93]">
-                    {product.detail}
+                <div className="md:col-span-7">
+                  <p className="mb-3 text-[12px] font-medium tracking-[0.11em] text-[#8e8e93] uppercase">
+                    {work.label}
+                  </p>
+                  <h2 className="apple-headline text-[clamp(2.2rem,5vw,3.9rem)] leading-[1.03] font-semibold tracking-[-0.04em]">
+                    {work.name}
+                  </h2>
+                  <p className="mt-4 max-w-[34ch] text-[20px] leading-[1.35] font-medium tracking-[-0.02em] text-[#e5e5ea] md:text-[23px]">
+                    {work.concept}
                   </p>
                 </div>
 
-                <div className="flex items-center gap-5 pt-1 text-[13.5px] font-medium md:justify-end">
-                  <button
-                    type="button"
-                    onClick={() => setQuickLookId(product.id)}
-                    className="inline-flex items-center gap-1.5 text-[#a1a1a6] transition-colors hover:text-white"
-                  >
-                    <Eye className="h-4 w-4" />
-                    Quick Look
-                  </button>
+                <div className="flex flex-col justify-between gap-6 md:col-span-5">
+                  <p className="text-[15px] leading-[1.68] text-[#a1a1a6]">{work.narrative}</p>
+                  <div className="flex items-center justify-between gap-4 border-t border-white/[0.08] pt-5">
+                    <span className="font-mono text-[12px] text-[#6e6e73]">{work.domain}</span>
+                    <a
+                      href={work.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-[14.5px] font-semibold text-[#0a84ff] transition-opacity hover:opacity-80"
+                    >
+                      Visit {work.name}
+                      <ArrowUpRight className="h-4 w-4" />
+                    </a>
+                  </div>
+                </div>
+              </motion.article>
+            ))}
+
+            {/* Atmos: intentionally lighter secondary feature */}
+            {secondaryFeatured.map((work) => (
+              <motion.article
+                key={work.id}
+                initial={{ opacity: 0, y: 14 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-40px" }}
+                transition={{ duration: 0.5 }}
+                style={{
+                  background: `radial-gradient(520px 200px at 80% 50%, ${work.accentGlow}, transparent 72%)`,
+                }}
+                className="grid grid-cols-1 gap-6 border-b border-white/[0.09] py-12 md:grid-cols-12 md:items-center"
+              >
+                <div className="md:col-span-5">
+                  <p className="mb-2 text-[11.5px] font-medium tracking-[0.11em] text-[#8e8e93] uppercase">
+                    {work.label}
+                  </p>
+                  <h3 className="text-[28px] leading-tight font-semibold tracking-[-0.03em] text-white md:text-[32px]">
+                    {work.name}
+                  </h3>
+                </div>
+                <div className="md:col-span-5">
+                  <p className="text-[15.5px] font-medium text-[#e5e5ea]">{work.concept}</p>
+                  <p className="mt-1.5 text-[14px] leading-[1.6] text-[#8e8e93]">{work.narrative}</p>
+                </div>
+                <div className="md:col-span-2 md:text-right">
                   <a
-                    href={product.url}
+                    href={work.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-[#0a84ff] transition-opacity hover:opacity-80"
+                    className="inline-flex items-center gap-1 text-[14px] font-semibold text-[#0a84ff] transition-opacity hover:opacity-80"
                   >
-                    Visit
+                    Open
                     <ArrowUpRight className="h-4 w-4" />
                   </a>
                 </div>
@@ -274,165 +208,204 @@ export default function App() {
           </div>
         </section>
 
-        {/* Section 2: 39 Bespoke Concept Explorations — zero boxes, hairline typographic index */}
-        <section id="concepts" className="scroll-mt-16 py-20">
-          <div className="mb-10 flex flex-wrap items-end justify-between gap-6">
+        {/* Capabilities & Disciplines — CV integrated, no programming languages, no boxes */}
+        <section id="capabilities" className="scroll-mt-16 py-24">
+          <div className="mb-14 grid grid-cols-1 gap-6 md:grid-cols-12 md:items-end">
+            <div className="md:col-span-7">
+              <p className="mb-2 text-[12px] font-medium tracking-[0.12em] text-[#0a84ff] uppercase">
+                Capabilities
+              </p>
+              <h2 className="text-[clamp(1.85rem,3.8vw,2.9rem)] leading-[1.06] font-semibold tracking-[-0.035em] text-white">
+                Engineering disciplines beyond syntax.
+              </h2>
+            </div>
+            <p className="text-[14.5px] leading-[1.6] text-[#8e8e93] md:col-span-5">
+              Focused on shipping reliable systems end-to-end: cloud automation, data extraction, reconciliation logic, hardware fabrication, and team execution.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-x-12 gap-y-12 md:grid-cols-2 lg:grid-cols-3">
+            {DISCIPLINES.map((d) => (
+              <div key={d.title} className="border-t border-white/[0.11] pt-6">
+                <h3 className="text-[18px] font-semibold tracking-[-0.02em] text-white">{d.title}</h3>
+                <p className="mt-2.5 text-[14px] leading-[1.62] text-[#a1a1a6]">{d.summary}</p>
+                <p className="mt-4 text-[12.5px] leading-[1.6] text-[#6e6e73]">
+                  {d.areas.join(" · ")}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Ranked Selected Work — Top 9 Magazine Columns (not a list, not boxes) */}
+        <section id="selected" className="scroll-mt-16 py-20">
+          <div className="mb-12 flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="mb-2 text-[12px] font-medium tracking-[0.12em] text-[#0a84ff] uppercase">
-                Bespoke Concept Explorations
+                Selected Work · Ranked by Craft
               </p>
-              <h2 className="text-[clamp(1.8rem,3.6vw,2.75rem)] leading-[1.08] font-semibold tracking-[-0.035em] text-white">
-                {BESPOKE_CONCEPTS.length} original brand &amp; service concepts.
+              <h2 className="text-[clamp(1.85rem,3.8vw,2.9rem)] leading-[1.06] font-semibold tracking-[-0.035em] text-white">
+                Standout platforms &amp; bespoke concepts.
               </h2>
-              <p className="mt-3 max-w-[58ch] text-[14.5px] leading-[1.6] text-[#8e8e93]">
-                Each concept below was designed individually with its own typography, flow, and job to do — from office lunch ordering and where-to-buy food locators to walk-in salon queues and school booklist pickup. Repeated template pages are excluded.
+            </div>
+            <p className="max-w-[40ch] text-[14px] text-[#8e8e93]">
+              Ordered by depth and originality rather than alphabetically. Every site opens live.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-x-10 gap-y-12 md:grid-cols-3">
+            {topNine.map((item) => (
+              <a
+                key={item.id}
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group block border-t border-white/[0.12] pt-6 transition-opacity hover:opacity-90"
+              >
+                <div className="flex items-center justify-between gap-3 text-[11.5px] text-[#6e6e73]">
+                  <span>{item.sector}</span>
+                  <ArrowUpRight className="h-4 w-4 text-[#8e8e93] transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-[#0a84ff]" />
+                </div>
+                <h3 className="mt-3 text-[21px] font-semibold tracking-[-0.025em] text-white">
+                  {item.name}
+                </h3>
+                <p className="mt-1 text-[14px] font-medium text-[#d1d1d6]">{item.purpose}</p>
+                <p className="mt-1.5 text-[13.5px] leading-[1.55] text-[#8e8e93]">{item.headline}</p>
+              </a>
+            ))}
+          </div>
+
+          {/* Full Ranked Archive Explorer — compact 2-column flowing index with sector tabs */}
+          <div className="mt-24 border-t border-white/[0.1] pt-14">
+            <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <p className="mb-1.5 text-[12px] font-medium tracking-[0.12em] text-[#8e8e93] uppercase">
+                  More Ranked Work
+                </p>
+                <h3 className="text-[24px] font-semibold tracking-[-0.03em] text-white">
+                  Browse by sector
+                </h3>
+              </div>
+              <p className="text-[13px] text-[#6e6e73]">
+                {RANKED_WORKS.length + FEATURED_WORK.length} total live builds &amp; unique concepts · templated clones excluded
               </p>
             </div>
 
-            <div className="flex w-full items-center gap-2 border-b border-white/[0.16] pb-2 sm:w-64">
-              <Search className="h-3.5 w-3.5 text-[#6e6e73]" />
-              <input
-                type="search"
-                value={conceptQuery}
-                onChange={(e) => setConceptQuery(e.target.value)}
-                placeholder="Filter concepts..."
-                aria-label="Filter bespoke concepts"
-                className="w-full bg-transparent text-[13.5px] text-white outline-none placeholder:text-[#6e6e73]"
-              />
-            </div>
-          </div>
-
-          {/* Borderless iOS underline category tabs */}
-          <div
-            className="mb-6 flex gap-6 overflow-x-auto border-b border-white/[0.08] pb-3 text-[13.5px]"
-            role="tablist"
-            aria-label="Filter bespoke concepts by sector"
-          >
-            {CONCEPT_GROUPS.map((group) => {
-              const count =
-                group === "All"
-                  ? BESPOKE_CONCEPTS.length
-                  : BESPOKE_CONCEPTS.filter((c) => c.group === group).length;
-              const selected = activeGroup === group;
-              return (
-                <button
-                  key={group}
-                  type="button"
-                  role="tab"
-                  aria-selected={selected}
-                  onClick={() => setActiveGroup(group)}
-                  className={`relative shrink-0 pb-1 font-medium transition-colors ${
-                    selected ? "text-white" : "text-[#8e8e93] hover:text-[#d1d1d6]"
-                  }`}
-                >
-                  {group} <span className="tabular text-[11.5px] text-[#6e6e73]">{count}</span>
-                  {selected && (
-                    <motion.span
-                      layoutId="conceptTabLine"
-                      className="absolute inset-x-0 -bottom-[13px] h-[2px] bg-white"
-                      transition={{ type: "spring", stiffness: 420, damping: 34 }}
-                    />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Hairline editorial list */}
-          <div>
-            {filteredConcepts.length === 0 ? (
-              <p className="py-12 text-[14px] text-[#6e6e73]">No matching concepts.</p>
-            ) : (
-              filteredConcepts.map((c) => (
-                <div
-                  key={c.slug}
-                  className="group grid grid-cols-1 gap-2 border-b border-white/[0.07] py-4 transition-colors hover:bg-white/[0.025] md:grid-cols-[220px_minmax(0,1fr)_120px_auto] md:items-center md:gap-6 md:px-3"
-                >
-                  <div className="font-semibold tracking-[-0.015em] text-white transition-transform duration-200 group-hover:translate-x-1">
-                    {c.brand}
-                  </div>
-
-                  <div className="min-w-0 text-[14px] text-[#a1a1a6]">
-                    <span className="text-[#e5e5ea]">{c.purpose}</span>
-                    {c.headline && c.headline.toLowerCase() !== c.purpose.toLowerCase() && (
-                      <span className="text-[#6e6e73]"> · {c.headline}</span>
+            <div
+              className="mb-8 flex gap-6 overflow-x-auto border-b border-white/[0.08] pb-3 text-[13.5px]"
+              role="tablist"
+              aria-label="Filter ranked work by sector"
+            >
+              {SECTORS.map((sector) => {
+                const selected = activeSector === sector;
+                return (
+                  <button
+                    key={sector}
+                    type="button"
+                    role="tab"
+                    aria-selected={selected}
+                    onClick={() => {
+                      setActiveSector(sector);
+                      setShowAllArchive(false);
+                    }}
+                    className={`relative shrink-0 pb-1 font-medium transition-colors ${
+                      selected ? "text-white" : "text-[#8e8e93] hover:text-[#d1d1d6]"
+                    }`}
+                  >
+                    {sector}
+                    {selected && (
+                      <motion.span
+                        layoutId="sectorUnderline"
+                        className="absolute inset-x-0 -bottom-[13px] h-[2px] bg-white"
+                        transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                      />
                     )}
-                  </div>
+                  </button>
+                );
+              })}
+            </div>
 
-                  <span className="text-[12px] text-[#6e6e73]">{c.group}</span>
-
-                  <div className="flex items-center gap-4 pt-1 text-[13px] font-medium md:justify-end md:pt-0">
-                    <button
-                      type="button"
-                      onClick={() => setQuickLookId(`concept:${c.slug}`)}
-                      className="text-[#8e8e93] transition-colors hover:text-white"
-                    >
-                      Quick Look
-                    </button>
-                    <a
-                      href={c.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-0.5 text-[#0a84ff] transition-opacity hover:opacity-80"
-                    >
-                      Open
-                      <ArrowUpRight className="h-3.5 w-3.5" />
-                    </a>
+            <div className="grid grid-cols-1 gap-x-12 md:grid-cols-2">
+              {visibleArchive.map((item) => (
+                <a
+                  key={item.id}
+                  href={item.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-baseline justify-between gap-4 border-b border-white/[0.07] py-4 transition-colors hover:bg-white/[0.025] md:px-2"
+                >
+                  <div className="min-w-0">
+                    <span className="font-semibold tracking-[-0.015em] text-white group-hover:text-[#0a84ff]">
+                      {item.name}
+                    </span>
+                    <span className="text-[13.5px] text-[#8e8e93]"> · {item.purpose}</span>
                   </div>
-                </div>
-              ))
+                  <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-[#6e6e73] transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-white" />
+                </a>
+              ))}
+            </div>
+
+            {activeSector === "All" && archiveWorks.length > 12 && (
+              <div className="mt-8">
+                <button
+                  type="button"
+                  onClick={() => setShowAllArchive((s) => !s)}
+                  className="text-[14px] font-medium text-[#0a84ff] transition-opacity hover:opacity-80"
+                >
+                  {showAllArchive
+                    ? "Show fewer"
+                    : `Show all ${archiveWorks.length} remaining ranked works`}
+                </button>
+              </div>
             )}
           </div>
         </section>
 
-        {/* Section 3: Open Source — clean 3-row hairline list */}
-        <section id="open-source" className="scroll-mt-16 py-20">
-          <div className="mb-10">
+        {/* Background, Credentials & Hardware — integrated CV highlights, zero boxes */}
+        <section id="background" className="scroll-mt-16 border-t border-white/[0.1] py-24">
+          <div className="mb-14">
             <p className="mb-2 text-[12px] font-medium tracking-[0.12em] text-[#0a84ff] uppercase">
-              Open Source &amp; Guides
+              Background
             </p>
-            <h2 className="text-[clamp(1.8rem,3.6vw,2.75rem)] leading-[1.08] font-semibold tracking-[-0.035em] text-white">
-              Public repositories.
+            <h2 className="text-[clamp(1.85rem,3.8vw,2.9rem)] leading-[1.06] font-semibold tracking-[-0.035em] text-white">
+              Track record &amp; credentials.
             </h2>
           </div>
 
-          <div className="border-t border-white/[0.09]">
-            {OPEN_TOOLS.map((tool) => (
-              <div
-                key={tool.id}
-                className="group grid grid-cols-1 gap-4 border-b border-white/[0.08] py-7 transition-colors hover:bg-white/[0.025] md:grid-cols-[260px_minmax(0,1fr)_auto] md:items-center md:gap-8 md:px-3"
-              >
-                <h3 className="text-[17px] font-semibold tracking-[-0.02em] text-white transition-transform duration-200 group-hover:translate-x-1">
-                  {tool.name}
-                </h3>
-                <p className="text-[14.5px] leading-[1.6] text-[#8e8e93]">{tool.concept}</p>
-                <div className="flex items-center gap-4 text-[13.5px] font-medium md:justify-end">
-                  {tool.previewable && (
-                    <button
-                      type="button"
-                      onClick={() => setQuickLookId(tool.id)}
-                      className="text-[#8e8e93] transition-colors hover:text-white"
-                    >
-                      Quick Look
-                    </button>
-                  )}
-                  <a
-                    href={tool.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-[#0a84ff] transition-opacity hover:opacity-80"
-                  >
-                    {tool.previewable ? "Open" : "View"}
-                    <ArrowUpRight className="h-4 w-4" />
-                  </a>
+          {/* 3-column open credentials strip (no boxes) */}
+          <div className="mb-16 grid grid-cols-1 gap-10 border-b border-white/[0.08] pb-14 md:grid-cols-3">
+            {CREDENTIALS.map((c) => (
+              <div key={c.title}>
+                <div className="apple-headline text-[34px] font-semibold tracking-[-0.035em]">
+                  {c.metric}
                 </div>
+                <div className="mt-1 text-[15px] font-semibold text-white">{c.title}</div>
+                <div className="mt-1 text-[13.5px] text-[#8e8e93]">{c.detail}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* 2x2 open editorial experience grid (no vertical resume list, no boxes) */}
+          <div className="grid grid-cols-1 gap-x-14 gap-y-12 md:grid-cols-2">
+            {BACKGROUND.map((item) => (
+              <div key={item.title + item.org} className="border-t border-white/[0.09] pt-5">
+                <div className="flex items-baseline justify-between gap-4">
+                  <h3 className="text-[17px] font-semibold tracking-[-0.02em] text-white">
+                    {item.title}
+                  </h3>
+                  <span className="tabular font-mono text-[11.5px] text-[#6e6e73]">
+                    {item.period}
+                  </span>
+                </div>
+                <p className="mt-1 text-[13.5px] font-medium text-[#0a84ff]">{item.org}</p>
+                <p className="mt-2.5 text-[14px] leading-[1.6] text-[#8e8e93]">{item.note}</p>
               </div>
             ))}
           </div>
         </section>
 
         {/* Open-Air Contact Footer */}
-        <footer id="contact" className="scroll-mt-16 border-t border-white/[0.09] py-20">
+        <footer id="contact" className="scroll-mt-16 border-t border-white/[0.1] py-20">
           <div className="flex flex-col justify-between gap-10 md:flex-row md:items-end">
             <div>
               <p className="mb-3 text-[12px] font-medium tracking-[0.12em] text-[#8e8e93] uppercase">
@@ -469,20 +442,12 @@ export default function App() {
         </footer>
       </main>
 
-      <QuickLookSheet
-        items={previewTargets}
-        activeId={quickLookId}
-        onClose={() => setQuickLookId(null)}
-        onSelect={setQuickLookId}
-      />
-
       <Spotlight
-        open={spotlightOpen}
-        entries={spotlightEntries}
-        onClose={() => setSpotlightOpen(false)}
+        open={navigatorOpen}
+        onClose={() => setNavigatorOpen(false)}
+        onCopyEmail={copyEmail}
       />
 
-      {/* Floating iOS Toast */}
       <AnimatePresence>
         {toast && (
           <motion.div
